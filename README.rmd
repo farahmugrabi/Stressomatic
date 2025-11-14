@@ -6,13 +6,13 @@ date: "October 2025"
 
 <style>
 body {
-text-align: justify}
-.centered {
-text-align: center;
+  text-align: justify;
 }
-.bordered{
-border:2px solid #cc0000;
-border-style: solid;
+.centered {
+  text-align: center;
+}
+.bordered {
+  border: 2px solid #cc0000;
 }
 </style>
 
@@ -24,117 +24,94 @@ border-style: solid;
 </div>
 </div>
 
-This tool is for information purposes only and should not replace any consistent assessment of the financial resilience of individual institutions. The inference of this tool is limited as it relies only on EBA data from past exercises using an econometric approach, as such it cannot replace any balance-sheet modelling tool. 
+This tool is for information purposes only. It does **not** replace a full assessment of the financial resilience of individual institutions. Its inference is limited, as it relies solely on past EBA stress test data and an econometric approach, and therefore cannot substitute for a full balance-sheet modelling framework.
 
 <div class="bordered">
 <div class="centered">
 
-## Welcome 
-## to 
+## Welcome  
+## to
 
 </div>
 
 <center>
 
 ![](../www/Logos/Logo_V2.png){width=50%}
-</center>
-</div>
-
-
-This tool aims to rapidly assess the financial resilience of banks to any macroeconomic scenario by leveraging the outcomes of past EBA EU-wide stress-testing exercises (2014–2025).
-
-The tool is based on the methodology developped by Q. Bro de Comères and F. Mugrabi, "A Quick Stress Testing Framework for European Banks", forthcoming in International Journal of Central Banking (202_). Users are kindly requested to cite this paper when using the tool, its underlying methodology, or any results, data and/or analyses derived from it.
-
-The EBA and CRR3 worksheets provide a set of visualization tools for the 2010–2025 EBA stress test results, as well as for assessing the impact of the finalization of CRR3 on banks’ starting CET1 capital ratios, using data from the 2025 exercise.
-
-Then, the serious things...
-
-To run the framework, make sure you have a working version of R or RStudio installed on your computer.
-
-The (high-level) structure of the framework is the following. When hitting the "Stress Me!" button, a R script called "Stress-O-Matic.R" will open. You need to run it to its end. For any comprehensive update of the framework beyond 2025, please contact the co-authors. 
-
-The framework consists of three main modules. Before running them, make sure to specify the folder path where this file is located in cell G49 (step 4.)— this ensures the script can correctly locate all necessary files within the framework structure.
-
-<div class="bordered">
-<div class="centered">
-
-## THE (OPTIONAL) SCENARIO GENERATION 
-
-</div>
-</div>
-
-This module, or step 1, is optional and can be skipped by setting option in cell G13 to "N". In this case, you can go directly to step 2. and input the scenario of your choice in the table , in growth rates (similar to what the EBA reports, for instance). You do not need to provide values for all the variables, you can leave any of them blank, the column will then turn grey. 
-
-The scenario generation module generates a scenario using two long-difference (𝑌_(𝑡+ℎ)−𝑌_(𝑡−1)) local projections (LP) models at a quarterly frequency,  projecting over the next 12 quarters. The first model is linear, while the second is a smooth-transition LP (STLP) model, where the transition variable reflects the leverage state of the economy. As a result, in cell M24, you can choose which speficiation to consider: "Linear", "Low-leverage", or "High-leverage". The model generates a projected path for the selected credit cycle state of the economy in response to an exogenous restrictive monetary policy shock, considering three endogenous variables — real GDP, unemployment, and real residential real-estate prices — and one interest rate variable (the 1-year Euribor). You can specify the number of lags for the endogenous and rate variables in cells G21 and K21, respectively. In addition, you can decide whether to include the contemporaneous values of these variables on the right-hand side of the equations via cells G22 and K22. The rate variable ensures that the scenario indeed reflects a restrictive shock and allows you to calibrate its intensity by rescaling all impulse response functions (IRFs) to a desired impact in cell G19 — for example, setting the scaling factor to 25 corresponds to a 25-basis-point (bp) increase in the 1-year Euribor on impact. Finally, you must specify the estimation sample period: the start and end years in cells E28 and E29 (e.g., 2000–2025), and the corresponding quarters in cells F28 and F29 (values between 1 and 4).
-
-The monetary policy shock can be identified in two ways in cell G15. If you choose the "OLS" option, the shock will be included in the regression, among the regressors. In the "IV" case, the shock will be used to instrument the 1-year Euribor. The restrictive exogenous shock is a monetary policy factor extracted from monetary policy surprises following Altavilla et al. (2019). Three factors are available in cell G17: a "Target" factor (policy rate), a "Path" factor (forward guidance), and a "QE" factor (quantitative easing), with regard to the rates they load on (e.g., the target factor mostly affects the 1-month Euribor, the QE factor mostly affects the 5- and 10-years ones). In addition, option "JK" allows you to use the factors extracted by Jarociński and Karadi (2020). In cell K17, you can specify whether you want the shock to be corrected from its information component. Select "Raw" to use the original factor, "MP" to use the pure monetary policy shock, and "CBI" to use the information shock. 
-
-Eventually, in cell K13, you need to specify the country for which you want to generate the adverse scenario. Only Euro Area countries are available, as the data are pulled directly from the ECB, while the leverage data come from the BIS. In cell L27, you can indicate whether you wish to use a local version of the BIS dataset, since the BIS server is not always reliable for data retrieval. You may need to update that file manually, in which case you should specify the new path in row 262 of the "Generate_Scenario.R" script (see Background sheet where all the underying scripts are listed).  
-
-You can feature any scenario generation script you want, by editing row 60 of the "Stress-O-Matic.R" script. 
-
-<div class="bordered">
-<div class="centered">
-
-## THE SENSITIVITY ESTIMATION 
-
-</div>
-</div>
-
-In step 3, the framework estimates banks’ sensitivities to macroeconomic shocks using bank-level results from past EU-wide EBA stress tests, following a “waterfall” approach. These sensitivities are obtained from bank-level panel regressions of each balance sheet item on the macroeconomic variables specified in the scenario, along with several controls — total assets, return on equity (RoE), deposit-to-funding ratio, non-interest income-to-operating revenue ratio (from BankFocus), and the World Bank index of banking system concentration — considering the adverse scenario only for the first, second, and third years following the shock. The regressions include both bank and exercise fixed effects. The estimated sensitivities are common across banks and cumulative over the three-year horizon. To make them bank-specific, they are multiplied by a bank-specific score derived from the fitted values of the regressions (excluding scenario variables) and rescaled to fall within the [-1; 1] range. Importantly, in cell G45, you can specify which EBA exercise(s) to include in the computation of elasticities (from 2014 to 2025), although it is recommended to include at least data from the 2018 exercise onward to ensure sufficient degrees of freedom and more robust estimates. 
-
-To obtain the contribution of all items to final capital depletion, the sensitivities are multiplied by the year-on-year variation of each scenario variable. The total effect is then derived as the sum of the impacts of all scenario variables on each balance sheet item for every bank participating in the EBA exercises.To obtain the contribution of each balance sheet item to the final capital depletion, the estimated sensitivities are multiplied by the year-on-year changes in each scenario variable. The overall impact is then computed as the sum of the effects of all scenario variables on each balance sheet item for every bank included in the EBA exercises. Importantly, only statistically significant elasticities are used in the computation of capital depletion, and for EBA exercises, only the adverse scenarios are considered.
-
-
-<div class="bordered">
-<div class="centered">
-
-## THE SEVERITY ASSESSMENT
-
-</div>
-</div>
-
-scenario for any bank, and to compare it with past outcomes from EBA stress tests. Our approach extends Bonucchi and Catalano (2022). We employ a non-parametric framework with multiple equations to jointly simulate random macro-financial paths for the selected country and the corresponding aggregate capital depletion. The system of equations treats all macroeconomic variables as endogenous, mirroring those used in the EBA stress test scenarios, and is based on quarterly ECB data. The framework considers eight variables — GDP, HICP, unemployment rate, residential and commercial real-estate prices, and short- and long-term interest rates — together with aggregate (country-level) capital ratios sourced from BankFocus before 2015 and from COREP thereafter. The exogenous variable, or shock, is the monetary policy "Target" factor, corresponding to one of the options available in Module 1. This setup conditions the system of equations to independent and identically distributed (i.i.d.) changes, which are then used to draw random i.i.d. shocks and generate simulations. 
-
-Through these simulations, we identify the number of observations that exceed the scenario thresholds (in year-on-year variations). For example, if the scenario assumes an adverse path where inflation increases, we count the number of simulated observations where the year-on-year inflation exceeds the scenario’s value. Conversely, if the adverse scenario assumes falling inflation, we consider the number of observations where year-on-year inflation falls below that threshold. Finally, we compute the frequency with which at least one endogenous variable exceeds the scenario path. 
-
-When you hit the “Stress Me!” button, the code automatically calculates the plausibility score for your input scenario. You can specify the number of simulations in cell M45, but note that a large number of simulations may significantly increase computation time (recommended: more than 5,000). As realized data are extracted from the ECB Data Portal, the plausibility score cannot be computed for countries outside the Euro Area.
-
-<div class="centered">
-
-## Voilà. Good luck!
-
-</div>
-
-<center>
-
-##Folder structure##																									
-																									
-**Meta**:
-
-- Functions:	Necessary functions to run the framework
-- Original Data:	Necessary original datasets to run the framework (sources: Bloomberg, BankFocus, BIS, MSCI, EBA). Updates are necessary for the scenario generation tool to remain up-to-date, but the framework can function without them
-- EBA_Simulations.R:	Script to generate EBA simulations in hidden severity_dta_eba worksheet																					
-- Extract_Data.R: Script to extract the data for the framework and populate "Selection Waterfall - Stress Test Results.xlsx" file (see above). Metadata file with multiple datasets necessary for the framework:			
-
-**Output**:
-- Output files,
-
-**Main**:
-- MaStress-O-Matic.R																						
-- Stress-O-Matic.xlsm																							
-
-##Notes##	
-			
-- Stress test data are imported from the "Selection Waterfall - Stress Test Results.xlsx" file. Yet, these data are primarily sourced from the "Total_Stress_Tests" dataset in the Stress_Test_Data folder.
-- Values are extracted with code "Extract_EBA_data_for_Waterfall.R" in 	Visualisation/Waterfall Charts											
-- The (high-level) structure of the framework is the following. When hitting the "Stress Me!" button, a R script called "Stress-O-Matic.R" will open. - You need to run it to its end. This script will call multiple functions, located in the Meta\Functions folder. In particular, the "Scenario_Generation.R" script relates to the scenario generation module, and you may need to edit it if you want to change the specification or the path to some datasets. Many useful datasets are pulled from the Meta\Original Data folder. 
-- The framework heavily relies on the "\Meta\Selection Waterfall - Stress Test Results.xlsx" file, which contains all the metadata and necessary data to run it. 
-- The plausibility scores of EBA scenarios are computed for each country within the “Meta/EBA_Simulations.R” script. 
-- The data in that file is pulled from the "Meta\Extract_Data.R" script, allowing for automatic data updates. 
-- For any comprehensive update of the framework beyond 2025, **please contact the co-authors**. 																									
-
-
-![](../www/NC.gif) 
 
 </center>
+</div>
+
+This tool provides a quick assessment of banks’ financial resilience to any macroeconomic scenario, by leveraging the outcomes of past EBA EU-wide stress tests (2014–2025).
+
+The framework is based on the methodology developed by Q. Bro de Comères and F. Mugrabi, *“A Quick Stress Testing Framework for European Banks”*, forthcoming in the *International Journal of Central Banking* (202_). Users are kindly requested to cite this paper when using the tool, its methodology, or any results, data, and/or analyses derived from it.
+
+The **EBA** and **CRR3** worksheets provide visualisation tools for:
+
+- EBA stress test results (2010–2025), and  
+- the impact of the finalisation of CRR3 on banks’ starting CET1 ratios (using 2025 data).
+
+Then, the serious part begins…
+
+To run the framework, you need a working installation of **R** or **RStudio**.
+
+At a high level, when you click the **“Stress Me!”** button, the R script `Stress-O-Matic.R` is opened and must be run to completion. For any comprehensive update of the framework beyond 2025, please contact the co-authors.
+
+The framework consists of three main modules. Before running them, specify the folder path where this file is located in **cell G49 (step 4.)** — this ensures the script can correctly locate all necessary files in the framework structure.
+
+---
+
+<div class="bordered">
+<div class="centered">
+
+## THE (OPTIONAL) SCENARIO GENERATION
+
+</div>
+</div>
+
+**Step 1** (scenario generation) is optional. It can be skipped by setting **cell G13** to `"N"`. In that case, you can move directly to Step 2 and input your own scenario in the table (in growth rates, similar to EBA reporting). You do not need to provide values for all variables: any column left blank will be greyed out.
+
+The scenario generation module produces an adverse scenario using two long-difference  
+\((Y_{t+h} - Y_{t-1})\) local projection (LP) models at quarterly frequency, projecting over the next **12 quarters**:
+
+- a **linear LP**, and  
+- a **smooth-transition LP (STLP)**, where the transition variable reflects the leverage state of the economy.
+
+In **cell M24**, you can select the specification: `"Linear"`, `"Low-leverage"`, or `"High-leverage"`.
+
+The model generates a projected path for the selected credit cycle state of the economy in response to an exogenous *restrictive* monetary policy shock. It considers three endogenous variables — **real GDP**, **unemployment**, and **real residential real-estate prices** — and one interest rate variable (**1-year Euribor**).
+
+You can control:
+
+- **Number of lags** for endogenous variables: **cell G21**  
+- **Number of lags** for the rate: **cell K21**  
+- Whether to include **contemporaneous values** of these variables on the right-hand side: **cells G22 and K22**
+
+The interest rate variable ensures that the scenario reflects a genuinely restrictive shock. You can calibrate its intensity by rescaling all impulse response functions (IRFs) via **cell G19**. For example, setting the scaling factor to 25 corresponds to a 25-basis-point (bp) increase in the 1-year Euribor on impact.
+
+You must also specify the estimation sample:
+
+- Start and end **years** in **cells E28 and E29** (e.g. 2000–2025)
+- Corresponding **quarters** in **cells F28 and F29** (values between 1 and 4)
+
+### Identification of the monetary policy shock
+
+In **cell G15**, you can choose how to identify the monetary policy shock:
+
+- `"OLS"`: the shock is included directly among the regressors  
+- `"IV"`: the shock is used to instrument the 1-year Euribor
+
+The restrictive exogenous shock is a monetary policy factor extracted from monetary policy surprises, following Altavilla et al. (2019). In **cell G17**, three factors are available:
+
+- `"Target"` factor (policy rate)  
+- `"Path"` factor (forward guidance)  
+- `"QE"` factor (quantitative easing)
+
+These factors load on different maturities (e.g. the Target factor mainly affects the 1-month Euribor, while the QE factor mainly affects 5- and 10-year rates). In addition, option `"JK"` allows you to use the factors extracted by Jarociński and Karadi (2020).
+
+In **cell K17**, you can specify whether the shock should be corrected for its information component:
+
+- `"Raw"`: original factor  
+- `"MP"`: “pure” monetary policy shock  
+- `"CBI"`: information (central bank information) shock  
+
+Finally, in **cell K13**, you must specify the **country**
